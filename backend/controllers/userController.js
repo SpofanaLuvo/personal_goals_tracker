@@ -18,11 +18,12 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("User already exists");
   }
+
   //hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  //  create user
 
+  //create user
   const user = await User.create({
     name,
     email,
@@ -34,54 +35,53 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      token:generateToken(user.id)
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
     throw new Error("Invalid user data");
   }
-
-  // res.json({ message: "Register User" });
+  //res.json({ message: "Register User" });
 });
 
-//@desc = Authenticare a user
+//@desc = Authenticate a user
 //@route = POST /api/users/login
 //@access = Public
 const loginUser = asyncHandler(async (req, res) => {
-    const {email, password} = req.body;
+  const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email})
+  // check for user email
+  const user = await User.findOne({ email: email });
 
-    if(user&&(await bcrypt.compare(password, user.password))) {
-         res.status(201).json({
-           _id: user._id,
-           name: user.name,
-           email: user.email,
-           token: generateToken(user.id),
-         });
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user.id),
+    });
   } else {
     res.status(400);
     throw new Error("Invalid credentials");
-    }
+  }
 });
 
 //@desc = Get user data
 //@route = POST /api/users/me
 //@access = Private
 const getMe = asyncHandler(async (req, res) => {
-    const {_id,name,email} = await User.findById(req.user.id)
-    res.status(200).json({
-        id:_id,
-        name,
-        email
-    })
+  const { _id, name, email } = await User.findById(req.user.id);
+  res.status(200).json({
+    id: _id,
+    name,
+    email,
+  });
 });
-
 
 //generate JWT
 
-const generateToken = (tokenId) => {
-  return jwt.sign({ tokenId }, process.env.JWT_SECRET, {
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
